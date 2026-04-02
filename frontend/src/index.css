@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+@theme {
+    /* ===== Neo-Brutalism Color Palette ===== */
+    --color-bg: #FFF8F0;
+    --color-bg-dark: #F0E6D6;
+    --color-surface: #FFFFFF;
+    --color-text: #1A1A2E;
+    --color-text-muted: #4A4A6A;
+    --color-border: #1A1A2E;
+
+    /* Vibrant Pastels */
+    --color-primary: #FF6B6B;
+    --color-primary-hover: #FF5252;
+    --color-secondary: #4ECDC4;
+    --color-secondary-hover: #3CB8B0;
+    --color-accent: #FFE66D;
+    --color-accent-hover: #FFD93D;
+    --color-purple: #A78BFA;
+    --color-purple-hover: #8B5CF6;
+    --color-pink: #F472B6;
+    --color-blue: #60A5FA;
+    --color-orange: #FB923C;
+    --color-lime: #A3E635;
+
+    /* Status Colors */
+    --color-success: #10B981;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
+
+    /* Heatmap Colors */
+    --color-heat-0: #E8E0D4;
+    --color-heat-1: #C6E48B;
+    --color-heat-2: #7BC96F;
+    --color-heat-3: #239A3B;
+    --color-heat-4: #196127;
+
+    /* ===== Typography ===== */
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Space Grotesk', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+
+    /* ===== Neo-Brutalism Tokens ===== */
+    --shadow-brutal: 4px 4px 0px #1A1A2E;
+    --shadow-brutal-sm: 2px 2px 0px #1A1A2E;
+    --shadow-brutal-lg: 6px 6px 0px #1A1A2E;
+    --shadow-brutal-hover: 6px 6px 0px #1A1A2E;
+    --shadow-brutal-active: 2px 2px 0px #1A1A2E;
+
+    --border-brutal: 3px solid #1A1A2E;
+    --radius-brutal: 8px;
+}
+
+/* ===== Base Styles ===== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-text);
+    border: 2px solid var(--color-bg);
+    border-radius: 4px;
+}
+
+/* ===== Custom Utilities ===== */
+.card-brutal {
+    background: var(--color-surface);
+    border: var(--border-brutal);
+    border-radius: var(--radius-brutal);
+    box-shadow: var(--shadow-brutal);
+}
+
+.btn-brutal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    border: var(--border-brutal);
+    border-radius: var(--radius-brutal);
+    box-shadow: var(--shadow-brutal);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-brutal:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-brutal-hover);
+}
+
+.btn-brutal:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--shadow-brutal-active);
+}
+
+.input-brutal {
+    font-family: var(--font-body);
+    background: var(--color-surface);
+    border: var(--border-brutal);
+    border-radius: var(--radius-brutal);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    outline: none;
+    width: 100%;
+    transition: box-shadow 0.15s;
+}
+
+.input-brutal:focus {
+    box-shadow: var(--shadow-brutal);
+}
+
+.input-brutal::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.6;
+}
+
+/* ===== Animations ===== */
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-bounce-subtle {
+    animation: bounce 0.4s ease-out;
+}
