@@ -11,7 +11,7 @@ const getColor = (percentage) => {
     return 'var(--color-heat-4)';
 };
 
-const Heatmap = ({ data = [] }) => {
+const Heatmap = ({ data = [], onDateClick, selectedDate }) => {
     const [tooltip, setTooltip] = useState(null);
 
     // Build the grid: 53 columns × 7 rows
@@ -123,11 +123,14 @@ const Heatmap = ({ data = [] }) => {
                                     {week.map((day, di) => (
                                         <div
                                             key={`${wi}-${di}`}
-                                            className="w-[12px] h-[12px] rounded-sm border border-[var(--color-border)] cursor-pointer transition-transform hover:scale-150 hover:z-10"
+                                            onClick={() => onDateClick && onDateClick(day.date)}
+                                            className={`w-[12px] h-[12px] rounded-sm border cursor-pointer transition-all hover:scale-150 hover:z-10 ${selectedDate === day.date
+                                                    ? 'border-white border-2 scale-110 z-10 shadow-[0_0_8px_rgba(255,255,255,0.5)]'
+                                                    : 'border-[var(--color-border)]'
+                                                }`}
                                             style={{
                                                 backgroundColor: day.isFuture ? 'transparent' : getColor(day.percentage),
                                                 opacity: day.isFuture ? 0.2 : 1,
-                                                borderColor: day.isFuture ? 'var(--color-bg-dark)' : 'var(--color-border)',
                                             }}
                                             onMouseEnter={(e) => {
                                                 const rect = e.target.getBoundingClientRect();

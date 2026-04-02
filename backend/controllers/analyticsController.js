@@ -38,7 +38,10 @@ const getWeeklyStats = async (req, res) => {
 
         const dailyStats = dates.map((date) => {
             const dayAbbr = getDayAbbr(date);
-            const scheduledHabits = habits.filter((h) => h.scheduledDays.includes(dayAbbr));
+            const scheduledHabits = habits.filter((h) => {
+                const createdAtDate = h.createdAt.toISOString().split('T')[0];
+                return h.scheduledDays.includes(dayAbbr) && date >= createdAtDate;
+            });
             const dayLogs = logs.filter((l) => l.date === date);
             const completed = dayLogs.filter((l) => l.status === 'done').length;
 
@@ -183,7 +186,10 @@ const getHeatmapData = async (req, res) => {
             const dateStr = d.toISOString().split('T')[0];
             const dayAbbr = getDayAbbr(dateStr);
 
-            const scheduledHabits = habits.filter((h) => h.scheduledDays.includes(dayAbbr));
+            const scheduledHabits = habits.filter((h) => {
+                const createdAtDate = h.createdAt.toISOString().split('T')[0];
+                return h.scheduledDays.includes(dayAbbr) && dateStr >= createdAtDate;
+            });
             const dayLogs = allLogs.filter((l) => l.date === dateStr);
             const completed = dayLogs.filter((l) => l.status === 'done').length;
 

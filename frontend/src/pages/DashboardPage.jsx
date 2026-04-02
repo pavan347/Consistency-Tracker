@@ -10,12 +10,14 @@ import Loader from '../components/ui/Loader';
 
 const getTodayUTC = () => new Date().toISOString().split('T')[0];
 
-const getDayAbbr = () => {
+const getDayAbbr = (dateStr) => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return days[new Date().getUTCDay()];
+    return days[new Date(dateStr + 'T00:00:00Z').getUTCDay()];
 };
 
 const DashboardPage = () => {
+    const today = getTodayUTC();
+    const [selectedDate, setSelectedDate] = useState(today);
     const [habits, setHabits] = useState([]);
     const [logs, setLogs] = useState([]);
     const [heatmapData, setHeatmapData] = useState([]);
@@ -24,14 +26,14 @@ const DashboardPage = () => {
     const [note, setNote] = useState('');
     const [existingNoteLogId, setExistingNoteLogId] = useState(null);
 
-    const today = getTodayUTC();
-    const todayDay = getDayAbbr();
+    const isSelectedToday = selectedDate === today;
+    const selectedDayAbbr = getDayAbbr(selectedDate);
 
     const fetchData = useCallback(async () => {
         try {
             const [habitsRes, logsRes, heatmapRes, overallRes] = await Promise.all([
                 habitsAPI.getAll(),
-                logsAPI.getByDate(today),
+                logsAPI.getByDate(selectedDate),
                 analyticsAPI.getHeatmap(),
                 analyticsAPI.getOverall(),
             ]);
@@ -41,24 +43,32 @@ const DashboardPage = () => {
             setHeatmapData(heatmapRes.data);
             setOverallStats(overallRes.data);
 
-            // Check for existing note in today's logs
+            // Check for existing note in logs
             const noteLog = logsRes.data.find((l) => l.note);
             if (noteLog) {
                 setNote(noteLog.note);
                 setExistingNoteLogId(noteLog._id);
+            } else {
+                setNote('');
+                setExistingNoteLogId(null);
             }
         } catch (error) {
             toast.error('Failed to load dashboard data');
         } finally {
             setLoading(false);
         }
-    }, [today]);
+    }, [selectedDate]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     const handleToggle = async (habitId, status) => {
+        if (!isSelectedToday) {
+            toast.error('Past logs are immutable. You can only track today!');
+            return;
+        }
+
         try {
             await logsAPI.create({ habitId, status });
             toast.success(status === 'done' ? '✓ Marked as done!' : '✗ Marked as missed');
@@ -69,6 +79,10 @@ const DashboardPage = () => {
     };
 
     const handleNoteSave = async () => {
+        if (!isSelectedToday) {
+            toast.error('Notes can only be added for today.');
+            return;
+        }
         if (!note.trim()) return;
 
         try {
@@ -85,9 +99,9 @@ const DashboardPage = () => {
         }
     };
 
-    // Filter today's scheduled habits
-    const todayHabits = habits.filter((h) => h.scheduledDays.includes(todayDay));
-    const otherHabits = habits.filter((h) => !h.scheduledDays.includes(todayDay));
+    // Filter scheduled habits for the selected day
+    const displayHabits = habits.filter((h) => h.scheduledDays.includes(selectedDayAbbr));
+    const otherHabits = habits.filter((h) => !h.scheduledDays.includes(selectedDayAbbr));
 
     // Get stats for each habit
     const habitsWithStats = (list) =>
@@ -96,9 +110,9 @@ const DashboardPage = () => {
             currentStreak: overallStats?.habitStats?.find((s) => s.habitId === h._id)?.currentStreak || 0,
         }));
 
-    const completedToday = logs.filter((l) => l.status === 'done').length;
-    const totalScheduledToday = todayHabits.length;
-    const todayPercentage = totalScheduledToday > 0 ? Math.round((completedToday / totalScheduledToday) * 100) : 0;
+    const completedOnDate = logs.filter((l) => l.status === 'done').length;
+    const totalScheduledOnDate = displayHabits.length;
+    const datePercentage = totalScheduledOnDate > 0 ? Math.round((completedOnDate / totalScheduledOnDate) * 100) : 0;
 
     if (loading) return <><Navbar /><Loader size="lg" /></>;
 
@@ -110,9 +124,11 @@ const DashboardPage = () => {
                 {/* Top Stats Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                     <Card className="bg-accent">
-                        <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">Today</div>
-                        <div className="text-3xl font-bold">{todayPercentage}%</div>
-                        <div className="text-xs font-mono">{completedToday}/{totalScheduledToday} done</div>
+                        <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">
+                            {isSelectedToday ? 'Today' : 'Selected Day'}
+                        </div>
+                        <div className="text-3xl font-bold">{datePercentage}%</div>
+                        <div className="text-xs font-mono">{completedOnDate}/{totalScheduledOnDate} done</div>
                     </Card>
                     <Card className="bg-secondary">
                         <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">Overall</div>
@@ -136,24 +152,26 @@ const DashboardPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left column: Today's habits */}
                     <div className="lg:col-span-2 space-y-4">
-                        {/* Today's Habits */}
+                        {/* Selected Day's Habits */}
                         <div>
                             <div className="flex items-center gap-2 mb-3">
-                                <h2 className="text-xl font-bold">Today's Habits</h2>
-                                <Badge variant="primary">{todayDay}</Badge>
-                                <Badge variant={todayPercentage === 100 ? 'success' : 'warning'}>
-                                    {todayPercentage}%
+                                <h2 className="text-xl font-bold">
+                                    {isSelectedToday ? "Today's Habits" : `Habits for ${selectedDate}`}
+                                </h2>
+                                <Badge variant="primary">{selectedDayAbbr}</Badge>
+                                <Badge variant={datePercentage === 100 ? 'success' : 'warning'}>
+                                    {datePercentage}%
                                 </Badge>
                             </div>
 
-                            {todayHabits.length > 0 ? (
+                            {displayHabits.length > 0 ? (
                                 <div className="space-y-2">
-                                    {habitsWithStats(todayHabits).map((habit) => (
+                                    {habitsWithStats(displayHabits).map((habit) => (
                                         <HabitCard
                                             key={habit._id}
                                             habit={habit}
                                             log={logs.find((l) => l.habitId === habit._id)}
-                                            isToday={true}
+                                            isToday={isSelectedToday}
                                             onToggle={handleToggle}
                                         />
                                     ))}
@@ -188,7 +206,11 @@ const DashboardPage = () => {
                         {/* Heatmap */}
                         <Card>
                             <h2 className="text-lg font-bold mb-4">📊 Consistency Heatmap</h2>
-                            <Heatmap data={heatmapData} />
+                            <Heatmap
+                                data={heatmapData}
+                                onDateClick={setSelectedDate}
+                                selectedDate={selectedDate}
+                            />
                         </Card>
                     </div>
 
@@ -218,24 +240,29 @@ const DashboardPage = () => {
 
                         {/* Daily Note */}
                         <Card>
-                            <h2 className="text-lg font-bold mb-3">📝 Today's Note</h2>
+                            <h2 className="text-lg font-bold mb-3">
+                                {isSelectedToday ? "Today's Note" : `Note for ${selectedDate}`}
+                            </h2>
                             <textarea
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                placeholder="How was your day? (max 500 chars)"
+                                disabled={!isSelectedToday}
+                                placeholder={isSelectedToday ? "How was your day? (max 500 chars)" : "No note for this day"}
                                 maxLength={500}
-                                className="input-brutal w-full h-24 resize-none text-sm"
+                                className={`input-brutal w-full h-24 resize-none text-sm ${!isSelectedToday ? 'bg-bg-dark opacity-70 cursor-not-allowed' : ''}`}
                             />
                             <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs font-mono text-[var(--color-text-muted)]">
                                     {note.length}/500
                                 </span>
-                                <button
-                                    onClick={handleNoteSave}
-                                    className="btn-brutal bg-[var(--color-secondary)] text-[var(--color-text)] px-4 py-1.5 text-xs"
-                                >
-                                    Save Note
-                                </button>
+                                {isSelectedToday && (
+                                    <button
+                                        onClick={handleNoteSave}
+                                        className="btn-brutal bg-[var(--color-secondary)] text-[var(--color-text)] px-4 py-1.5 text-xs"
+                                    >
+                                        Save Note
+                                    </button>
+                                )}
                             </div>
                         </Card>
 
