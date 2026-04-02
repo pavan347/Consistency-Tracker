@@ -90,11 +90,13 @@ h6 {
 }
 
 /* ===== Custom Utilities ===== */
-.card-brutal {
-    background: var(--color-surface);
-    border: var(--border-brutal);
-    border-radius: var(--radius-brutal);
-    box-shadow: var(--shadow-brutal);
+@layer base {
+    .card-brutal {
+        background-color: var(--color-surface);
+        border: var(--border-brutal);
+        border-radius: var(--radius-brutal);
+        box-shadow: var(--shadow-brutal);
+    }
 }
 
 .btn-brutal {

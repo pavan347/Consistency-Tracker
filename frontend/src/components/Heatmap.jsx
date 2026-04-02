@@ -68,6 +68,14 @@ const Heatmap = ({ data = [] }) => {
         return { grid: weeks, monthLabels: months };
     }, [data]);
 
+    const scrollRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+    }, [grid]);
+
     if (!data.length) {
         return (
             <div className="text-center py-8 text-[var(--color-text-muted)] text-sm font-mono">
@@ -78,25 +86,11 @@ const Heatmap = ({ data = [] }) => {
 
     return (
         <div className="relative">
-            {/* Month labels */}
-            <div className="flex mb-1 ml-8" style={{ gap: '0px' }}>
-                {monthLabels.map((m, i) => (
-                    <div
-                        key={i}
-                        className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase"
-                        style={{
-                            position: 'absolute',
-                            left: `${32 + m.weekIndex * 14}px`,
-                        }}
-                    >
-                        {m.label}
-                    </div>
-                ))}
-            </div>
-
-            <div className="flex gap-0 mt-5">
-                {/* Day labels */}
-                <div className="flex flex-col gap-[2px] mr-1 pt-0">
+            <div className="flex gap-0">
+                {/* Day labels (fixed left column) */}
+                <div className="flex flex-col gap-[2px] mr-1 shrink-0">
+                    {/* Month row spacer */}
+                    <div className="h-[14px]" />
                     {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((d, i) => (
                         <div key={i} className="h-[12px] text-[9px] font-bold text-[var(--color-text-muted)] leading-[12px] uppercase">
                             {d}
@@ -104,35 +98,55 @@ const Heatmap = ({ data = [] }) => {
                     ))}
                 </div>
 
-                {/* Grid */}
-                <div className="flex gap-[2px] overflow-x-auto">
-                    {grid.map((week, wi) => (
-                        <div key={wi} className="flex flex-col gap-[2px]">
-                            {week.map((day, di) => (
-                                <div
-                                    key={`${wi}-${di}`}
-                                    className="w-[12px] h-[12px] rounded-sm border border-[var(--color-border)] cursor-pointer transition-transform hover:scale-150 hover:z-10"
-                                    style={{
-                                        backgroundColor: day.isFuture ? 'transparent' : getColor(day.percentage),
-                                        opacity: day.isFuture ? 0.2 : 1,
-                                        borderColor: day.isFuture ? 'var(--color-bg-dark)' : 'var(--color-border)',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        const rect = e.target.getBoundingClientRect();
-                                        setTooltip({
-                                            x: rect.left + rect.width / 2,
-                                            y: rect.top - 8,
-                                            date: day.date,
-                                            percentage: day.percentage,
-                                            scheduled: day.scheduled,
-                                            completed: day.completed,
-                                        });
-                                    }}
-                                    onMouseLeave={() => setTooltip(null)}
-                                />
-                            ))}
-                        </div>
-                    ))}
+                {/* Scrollable area containing both month labels AND grid */}
+                <div
+                    ref={scrollRef}
+                    className="overflow-x-auto flex-1 scroll-smooth"
+                >
+                    <div className="flex gap-[2px]" style={{ width: 'fit-content' }}>
+                        {grid.map((week, wi) => {
+                            // Check if this week starts a new month
+                            // Only show labels that aren't the very first one if it's at index 0 to avoid duplicates in 365-day view
+                            const monthLabel = monthLabels.find((m) => m.weekIndex === wi && (wi > 0 || monthLabels.length < 12));
+
+                            return (
+                                <div key={wi} className="flex flex-col gap-[2px]">
+                                    {/* Month label row */}
+                                    <div className="h-[14px] flex items-end">
+                                        {monthLabel && (
+                                            <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase whitespace-nowrap">
+                                                {monthLabel.label}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {/* Day cells */}
+                                    {week.map((day, di) => (
+                                        <div
+                                            key={`${wi}-${di}`}
+                                            className="w-[12px] h-[12px] rounded-sm border border-[var(--color-border)] cursor-pointer transition-transform hover:scale-150 hover:z-10"
+                                            style={{
+                                                backgroundColor: day.isFuture ? 'transparent' : getColor(day.percentage),
+                                                opacity: day.isFuture ? 0.2 : 1,
+                                                borderColor: day.isFuture ? 'var(--color-bg-dark)' : 'var(--color-border)',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const rect = e.target.getBoundingClientRect();
+                                                setTooltip({
+                                                    x: rect.left + rect.width / 2,
+                                                    y: rect.top - 8,
+                                                    date: day.date,
+                                                    percentage: day.percentage,
+                                                    scheduled: day.scheduled,
+                                                    completed: day.completed,
+                                                });
+                                            }}
+                                            onMouseLeave={() => setTooltip(null)}
+                                        />
+                                    ))}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 

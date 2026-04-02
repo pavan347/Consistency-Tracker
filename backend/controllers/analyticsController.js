@@ -121,7 +121,11 @@ const getOverallStats = async (req, res) => {
         // Sort to find best and worst
         const sorted = [...habitStats].sort((a, b) => b.consistency - a.consistency);
         const bestHabit = sorted.length > 0 ? sorted[0] : null;
-        const worstHabit = sorted.length > 0 ? sorted[sorted.length - 1] : null;
+
+        // Only set worst habit if it actually has lower consistency than the best one
+        const worstHabit = sorted.length > 1 && sorted[sorted.length - 1].consistency < sorted[0].consistency
+            ? sorted[sorted.length - 1]
+            : null;
 
         // Day of week patterns
         const dayPatterns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {

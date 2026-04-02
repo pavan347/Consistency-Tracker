@@ -109,24 +109,24 @@ const DashboardPage = () => {
             <main className="max-w-6xl mx-auto px-4 py-6">
                 {/* Top Stats Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                    <Card className="bg-[var(--color-accent)]">
+                    <Card className="bg-accent">
                         <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">Today</div>
                         <div className="text-3xl font-bold">{todayPercentage}%</div>
                         <div className="text-xs font-mono">{completedToday}/{totalScheduledToday} done</div>
                     </Card>
-                    <Card className="bg-[var(--color-secondary)]">
+                    <Card className="bg-secondary">
                         <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">Overall</div>
                         <div className="text-3xl font-bold">{overallStats?.overallConsistency || 0}%</div>
                         <div className="text-xs font-mono">consistency</div>
                     </Card>
-                    <Card className="bg-[var(--color-purple)] text-white">
+                    <Card className="bg-purple text-white">
                         <div className="text-xs font-bold uppercase opacity-80 mb-1">Best Streak</div>
                         <div className="text-3xl font-bold">
                             🔥 {Math.max(...(overallStats?.habitStats?.map((h) => h.currentStreak) || [0]))}
                         </div>
                         <div className="text-xs font-mono opacity-80">days</div>
                     </Card>
-                    <Card className="bg-[var(--color-pink)] text-white">
+                    <Card className="bg-pink text-white">
                         <div className="text-xs font-bold uppercase opacity-80 mb-1">Active Habits</div>
                         <div className="text-3xl font-bold">{habits.length}</div>
                         <div className="text-xs font-mono opacity-80">tracking</div>

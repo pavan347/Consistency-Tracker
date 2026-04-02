@@ -13,7 +13,7 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
 
     return (
         <span
-            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold uppercase border-2 border(--color-border) rounded-md ${variants[variant]} ${className}`}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold uppercase border-2 border-(--color-border) rounded-md ${variants[variant]} ${className}`}
         >
             {children}
         </span>

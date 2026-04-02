@@ -41,6 +41,14 @@ const HabitsPage = () => {
         }));
     };
 
+    const toggleAllDays = () => {
+        if (formData.scheduledDays.length === ALL_DAYS.length) {
+            setFormData({ ...formData, scheduledDays: [] });
+        } else {
+            setFormData({ ...formData, scheduledDays: [...ALL_DAYS] });
+        }
+    };
+
     const resetForm = () => {
         setFormData({ name: '', scheduledDays: [] });
         setEditingHabit(null);
@@ -141,9 +149,18 @@ const HabitsPage = () => {
                                 maxLength={100}
                             />
                             <div>
-                                <label className="text-sm font-bold uppercase tracking-wide block mb-2">
-                                    Scheduled Days
-                                </label>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-sm font-bold uppercase tracking-wide block">
+                                        Scheduled Days
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={toggleAllDays}
+                                        className="text-[10px] font-bold uppercase bg-bg-dark px-2 py-1 rounded border-2 border-(--color-border) hover:bg-accent transition-all"
+                                    >
+                                        {formData.scheduledDays.length === ALL_DAYS.length ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                </div>
                                 <div className="flex flex-wrap gap-2">
                                     {ALL_DAYS.map((day) => (
                                         <button
@@ -151,8 +168,8 @@ const HabitsPage = () => {
                                             type="button"
                                             onClick={() => toggleDay(day)}
                                             className={`px-3 py-2 text-sm font-bold border-3 border-[var(--color-border)] rounded-[var(--radius-brutal)] transition-all ${formData.scheduledDays.includes(day)
-                                                    ? 'bg-[var(--color-primary)] text-white shadow-[var(--shadow-brutal-sm)]'
-                                                    : 'bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg-dark)]'
+                                                ? 'bg-[var(--color-primary)] text-white shadow-[var(--shadow-brutal-sm)]'
+                                                : 'bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg-dark)]'
                                                 }`}
                                         >
                                             {day}
