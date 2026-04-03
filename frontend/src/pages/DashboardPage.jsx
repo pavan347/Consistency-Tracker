@@ -4,6 +4,7 @@ import { habitsAPI, logsAPI, analyticsAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import HabitCard from '../components/HabitCard';
 import Heatmap from '../components/Heatmap';
+import CalendarView from '../components/CalendarView';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Loader from '../components/ui/Loader';
@@ -18,6 +19,7 @@ const getDayAbbr = (dateStr) => {
 const DashboardPage = () => {
     const today = getTodayUTC();
     const [selectedDate, setSelectedDate] = useState(today);
+    const [viewType, setViewType] = useState('heatmap'); // 'heatmap' or 'calendar'
     const [habits, setHabits] = useState([]);
     const [logs, setLogs] = useState([]);
     const [heatmapData, setHeatmapData] = useState([]);
@@ -117,21 +119,21 @@ const DashboardPage = () => {
     if (loading) return <><Navbar /><Loader size="lg" /></>;
 
     return (
-        <div className="min-h-screen bg-[var(--color-bg)]">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <main className="max-w-6xl mx-auto px-4 py-6">
                 {/* Top Stats Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                     <Card className="bg-accent">
-                        <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">
+                        <div className="text-xs font-bold uppercase text-text-muted mb-1">
                             {isSelectedToday ? 'Today' : 'Selected Day'}
                         </div>
                         <div className="text-3xl font-bold">{datePercentage}%</div>
                         <div className="text-xs font-mono">{completedOnDate}/{totalScheduledOnDate} done</div>
                     </Card>
                     <Card className="bg-secondary">
-                        <div className="text-xs font-bold uppercase text-[var(--color-text-muted)] mb-1">Overall</div>
+                        <div className="text-xs font-bold uppercase text-text-muted mb-1">Overall</div>
                         <div className="text-3xl font-bold">{overallStats?.overallConsistency || 0}%</div>
                         <div className="text-xs font-mono">consistency</div>
                     </Card>
@@ -177,8 +179,8 @@ const DashboardPage = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <Card className="bg-[var(--color-bg-dark)] text-center">
-                                    <p className="text-sm font-mono text-[var(--color-text-muted)]">
+                                <Card className="bg-bg-dark text-center">
+                                    <p className="text-sm font-mono text-text-muted">
                                         No habits scheduled for today. Rest day! 🧘
                                     </p>
                                 </Card>
@@ -188,7 +190,7 @@ const DashboardPage = () => {
                         {/* Other habits (not scheduled today) */}
                         {otherHabits.length > 0 && (
                             <div>
-                                <h2 className="text-lg font-bold mb-3 text-[var(--color-text-muted)]">Not Scheduled Today</h2>
+                                <h2 className="text-lg font-bold mb-3 text-text-muted">Not Scheduled Today</h2>
                                 <div className="space-y-2 opacity-60">
                                     {habitsWithStats(otherHabits).map((habit) => (
                                         <HabitCard
@@ -203,21 +205,40 @@ const DashboardPage = () => {
                             </div>
                         )}
 
-                        {/* Heatmap */}
+                        {/* Heatmap / Calendar Card */}
                         <Card>
-                            <h2 className="text-lg font-bold mb-4">📊 Consistency Heatmap</h2>
-                            <Heatmap
-                                data={heatmapData}
-                                onDateClick={setSelectedDate}
-                                selectedDate={selectedDate}
-                            />
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-bold">📊 Consistency</h2>
+                                <select 
+                                    value={viewType}
+                                    onChange={(e) => setViewType(e.target.value)}
+                                    className="text-xs font-bold uppercase tracking-wider bg-bg-dark border-2 border-(--color-border) rounded-md px-2 py-1 outline-none cursor-pointer hover:bg-surface transition-colors"
+                                >
+                                    <option value="heatmap">Heatmap View</option>
+                                    <option value="calendar">Calendar View</option>
+                                </select>
+                            </div>
+                            
+                            {viewType === 'heatmap' ? (
+                                <Heatmap
+                                    data={heatmapData}
+                                    onDateClick={setSelectedDate}
+                                    selectedDate={selectedDate}
+                                />
+                            ) : (
+                                <CalendarView
+                                    data={heatmapData}
+                                    onDateClick={setSelectedDate}
+                                    selectedDate={selectedDate}
+                                />
+                            )}
                         </Card>
                     </div>
 
                     {/* Right column: Streaks & Notes */}
                     <div className="space-y-4">
                         {/* Streaks */}
-                        <Card className="bg-[var(--color-accent)]">
+                        <Card className="bg-accent">
                             <h2 className="text-lg font-bold mb-3">🔥 Streaks</h2>
                             <div className="space-y-2">
                                 {overallStats?.habitStats
@@ -225,7 +246,7 @@ const DashboardPage = () => {
                                     .map((stat) => (
                                         <div
                                             key={stat.habitId}
-                                            className="flex items-center justify-between bg-[var(--color-surface)] p-2.5 rounded-md border-2 border-[var(--color-border)]"
+                                            className="flex items-center justify-between bg-surface p-2.5 rounded-md border-2 border-(--color-border)"
                                         >
                                             <span className="text-sm font-bold truncate mr-2">{stat.name}</span>
                                             <span className="text-sm font-mono font-bold shrink-0">
@@ -233,7 +254,7 @@ const DashboardPage = () => {
                                             </span>
                                         </div>
                                     )) || (
-                                        <p className="text-sm font-mono text-[var(--color-text-muted)]">No streak data yet</p>
+                                        <p className="text-sm font-mono text-text-muted">No streak data yet</p>
                                     )}
                             </div>
                         </Card>
@@ -252,13 +273,13 @@ const DashboardPage = () => {
                                 className={`input-brutal w-full h-24 resize-none text-sm ${!isSelectedToday ? 'bg-bg-dark opacity-70 cursor-not-allowed' : ''}`}
                             />
                             <div className="flex items-center justify-between mt-2">
-                                <span className="text-xs font-mono text-[var(--color-text-muted)]">
+                                <span className="text-xs font-mono text-text-muted">
                                     {note.length}/500
                                 </span>
                                 {isSelectedToday && (
                                     <button
                                         onClick={handleNoteSave}
-                                        className="btn-brutal bg-[var(--color-secondary)] text-[var(--color-text)] px-4 py-1.5 text-xs"
+                                        className="btn-brutal bg-secondary text-(--color-text) px-4 py-1.5 text-xs"
                                     >
                                         Save Note
                                     </button>
@@ -271,7 +292,7 @@ const DashboardPage = () => {
                             <Card className="bg-emerald-50">
                                 <h2 className="text-lg font-bold mb-2">🏆 Best Habit</h2>
                                 <p className="text-sm font-bold">{overallStats.bestHabit.name}</p>
-                                <p className="text-xs font-mono text-[var(--color-text-muted)]">
+                                <p className="text-xs font-mono text-text-muted">
                                     {overallStats.bestHabit.consistency}% consistency
                                 </p>
                             </Card>
@@ -280,7 +301,7 @@ const DashboardPage = () => {
                             <Card className="bg-red-50">
                                 <h2 className="text-lg font-bold mb-2">⚠️ Needs Work</h2>
                                 <p className="text-sm font-bold">{overallStats.worstHabit.name}</p>
-                                <p className="text-xs font-mono text-[var(--color-text-muted)]">
+                                <p className="text-xs font-mono text-text-muted">
                                     {overallStats.worstHabit.consistency}% consistency
                                 </p>
                             </Card>
