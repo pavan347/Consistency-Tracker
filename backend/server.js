@@ -32,7 +32,7 @@ app.use('/api/analytics', analyticsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.json({ status: 'OK', env: process.env.ENVIRONMENT, timestamp: new Date().toISOString() });
 });
 
 // Start server
