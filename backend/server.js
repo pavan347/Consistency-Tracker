@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const compression = require('compression');
 const connectDB = require('./config/db');
 const initCronJobs = require('./services/cronService');
 
@@ -16,6 +17,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const app = express();
 
 // Middleware
+app.use(compression());
 app.use(cors({
     origin: process.env.ENVIRONMENT == 'development' ? 'http://localhost:5173' : process.env.FRONTEND_URL,
     credentials: true,

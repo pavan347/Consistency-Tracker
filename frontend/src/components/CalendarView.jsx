@@ -143,4 +143,4 @@ const CalendarView = ({ data = [], onDateClick, selectedDate }) => {
     );
 };
 
-export default CalendarView;
+export default React.memo(CalendarView);

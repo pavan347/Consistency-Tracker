@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { analyticsAPI } from '../services/api';
+import { useWeeklyStats, useOverallStats } from '../hooks/apiHooks';
 import Navbar from '../components/Navbar';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -9,27 +9,16 @@ import Loader from '../components/ui/Loader';
 const DAYS_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const AnalyticsPage = () => {
-    const [weekly, setWeekly] = useState(null);
-    const [overall, setOverall] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { data: weekly, isLoading: isLoadingWeekly, isError: isErrorWeekly } = useWeeklyStats();
+    const { data: overall, isLoading: isLoadingOverall, isError: isErrorOverall } = useOverallStats();
+
+    const loading = isLoadingWeekly || isLoadingOverall;
 
     useEffect(() => {
-        const fetchAnalytics = async () => {
-            try {
-                const [weeklyRes, overallRes] = await Promise.all([
-                    analyticsAPI.getWeekly(),
-                    analyticsAPI.getOverall(),
-                ]);
-                setWeekly(weeklyRes.data);
-                setOverall(overallRes.data);
-            } catch (error) {
-                toast.error('Failed to load analytics');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAnalytics();
-    }, []);
+        if (isErrorWeekly || isErrorOverall) {
+            toast.error('Failed to load analytics');
+        }
+    }, [isErrorWeekly, isErrorOverall]);
 
     if (loading) return <><Navbar /><Loader size="lg" /></>;
 

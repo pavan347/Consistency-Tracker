@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { habitsAPI } from '../services/api';
+import { useHabits, useCreateHabit, useUpdateHabit, useDeleteHabit } from '../hooks/apiHooks';
 import Navbar from '../components/Navbar';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -11,26 +11,14 @@ import Loader from '../components/ui/Loader';
 const ALL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const HabitsPage = () => {
-    const [habits, setHabits] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: habits = [], isLoading: loading } = useHabits();
+    const { mutate: createHabit } = useCreateHabit();
+    const { mutate: updateHabit } = useUpdateHabit();
+    const { mutate: deleteHabit } = useDeleteHabit();
+
     const [showForm, setShowForm] = useState(false);
     const [editingHabit, setEditingHabit] = useState(null);
     const [formData, setFormData] = useState({ name: '', scheduledDays: [] });
-
-    const fetchHabits = async () => {
-        try {
-            const { data } = await habitsAPI.getAll();
-            setHabits(data);
-        } catch (error) {
-            toast.error('Failed to load habits');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchHabits();
-    }, []);
 
     const toggleDay = (day) => {
         setFormData((prev) => ({
@@ -55,7 +43,7 @@ const HabitsPage = () => {
         setShowForm(false);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
 
         if (!formData.name.trim()) {
@@ -68,18 +56,22 @@ const HabitsPage = () => {
             return;
         }
 
-        try {
-            if (editingHabit) {
-                await habitsAPI.update(editingHabit._id, formData);
-                toast.success('Habit updated (changes apply from today forward)');
-            } else {
-                await habitsAPI.create(formData);
-                toast.success('Habit created!');
-            }
-            resetForm();
-            fetchHabits();
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to save habit');
+        if (editingHabit) {
+            updateHabit({ id: editingHabit._id, data: formData }, {
+                onSuccess: () => {
+                    toast.success('Habit updated (changes apply from today forward)');
+                    resetForm();
+                },
+                onError: (err) => toast.error(err.response?.data?.message || 'Failed to update habit')
+            });
+        } else {
+            createHabit(formData, {
+                onSuccess: () => {
+                    toast.success('Habit created!');
+                    resetForm();
+                },
+                onError: (err) => toast.error(err.response?.data?.message || 'Failed to create habit')
+            });
         }
     };
 
@@ -89,16 +81,13 @@ const HabitsPage = () => {
         setShowForm(true);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (!confirm('Are you sure? This will soft-delete the habit.')) return;
 
-        try {
-            await habitsAPI.delete(id);
-            toast.success('Habit deleted');
-            fetchHabits();
-        } catch (error) {
-            toast.error('Failed to delete habit');
-        }
+        deleteHabit(id, {
+            onSuccess: () => toast.success('Habit deleted'),
+            onError: () => toast.error('Failed to delete habit')
+        });
     };
 
     if (loading) return <><Navbar /><Loader size="lg" /></>;

@@ -32,7 +32,7 @@ const getHabits = async (req, res) => {
         const habits = await Habit.find({
             userId: req.user._id,
             isDeleted: false,
-        }).sort({ createdAt: -1 });
+        }).sort({ createdAt: -1 }).lean();
 
         res.json(habits);
     } catch (error) {

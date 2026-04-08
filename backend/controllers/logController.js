@@ -68,7 +68,7 @@ const getLogsByDate = async (req, res) => {
         const logs = await HabitLog.find({
             habitId: { $in: habitIds },
             date,
-        });
+        }).lean();
 
         res.json(logs);
     } catch (error) {

@@ -28,5 +28,7 @@ const habitLogSchema = new mongoose.Schema(
 
 // Compound unique index: one log per habit per day
 habitLogSchema.index({ habitId: 1, date: 1 }, { unique: true });
+// Index on date for efficient heatmap queries
+habitLogSchema.index({ date: 1 });
 
 module.exports = mongoose.model('HabitLog', habitLogSchema);

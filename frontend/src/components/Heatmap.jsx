@@ -194,4 +194,4 @@ const Heatmap = ({ data = [], onDateClick, selectedDate }) => {
     );
 };
 
-export default Heatmap;
+export default React.memo(Heatmap);

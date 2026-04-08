@@ -33,4 +33,7 @@ const habitSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Compound index for efficient user habit retrieval
+habitSchema.index({ userId: 1, isDeleted: 1 });
+
 module.exports = mongoose.model('Habit', habitSchema);

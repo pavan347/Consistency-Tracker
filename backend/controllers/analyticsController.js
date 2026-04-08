@@ -15,7 +15,7 @@ const getDayAbbr = (dateStr) => {
 // GET /api/analytics/weekly
 const getWeeklyStats = async (req, res) => {
     try {
-        const habits = await Habit.find({ userId: req.user._id, isDeleted: false });
+        const habits = await Habit.find({ userId: req.user._id, isDeleted: false }).lean();
         const habitIds = habits.map((h) => h._id);
 
         // Get last 7 days
@@ -30,6 +30,13 @@ const getWeeklyStats = async (req, res) => {
         const logs = await HabitLog.find({
             habitId: { $in: habitIds },
             date: { $in: dates },
+        }).lean();
+
+        // Create a fast lookup map for logs by date and habitId
+        const logsByDateStr = {};
+        logs.forEach(log => {
+            if (!logsByDateStr[log.date]) logsByDateStr[log.date] = [];
+            logsByDateStr[log.date].push(log);
         });
 
         // Calculate scheduled vs completed for each day
@@ -42,7 +49,7 @@ const getWeeklyStats = async (req, res) => {
                 const createdAtDate = h.createdAt.toISOString().split('T')[0];
                 return h.scheduledDays.includes(dayAbbr) && date >= createdAtDate;
             });
-            const dayLogs = logs.filter((l) => l.date === date);
+            const dayLogs = logsByDateStr[date] || [];
             const completed = dayLogs.filter((l) => l.status === 'done').length;
 
             totalScheduled += scheduledHabits.length;
@@ -69,14 +76,21 @@ const getWeeklyStats = async (req, res) => {
 // GET /api/analytics/overall
 const getOverallStats = async (req, res) => {
     try {
-        const habits = await Habit.find({ userId: req.user._id, isDeleted: false });
+        const habits = await Habit.find({ userId: req.user._id, isDeleted: false }).lean();
         const habitIds = habits.map((h) => h._id);
 
-        const allLogs = await HabitLog.find({ habitId: { $in: habitIds } });
+        const allLogs = await HabitLog.find({ habitId: { $in: habitIds } }).lean();
+
+        const logsByHabitId = {};
+        allLogs.forEach(log => {
+            const hId = log.habitId.toString();
+            if(!logsByHabitId[hId]) logsByHabitId[hId] = [];
+            logsByHabitId[hId].push(log);
+        });
 
         // Per-habit stats
         const habitStats = habits.map((habit) => {
-            const habitLogs = allLogs.filter((l) => l.habitId.toString() === habit._id.toString());
+            const habitLogs = logsByHabitId[habit._id.toString()] || [];
             const done = habitLogs.filter((l) => l.status === 'done').length;
             const total = habitLogs.length;
 
@@ -162,7 +176,7 @@ const getOverallStats = async (req, res) => {
 // GET /api/analytics/heatmap
 const getHeatmapData = async (req, res) => {
     try {
-        const habits = await Habit.find({ userId: req.user._id, isDeleted: false });
+        const habits = await Habit.find({ userId: req.user._id, isDeleted: false }).lean();
         const habitIds = habits.map((h) => h._id);
 
         // Get last 365 days
@@ -176,6 +190,12 @@ const getHeatmapData = async (req, res) => {
                 $gte: startDate.toISOString().split('T')[0],
                 $lte: today.toISOString().split('T')[0],
             },
+        }).lean();
+
+        const logsByDateStr = {};
+        allLogs.forEach(log => {
+            if (!logsByDateStr[log.date]) logsByDateStr[log.date] = [];
+            logsByDateStr[log.date].push(log);
         });
 
         // Build heatmap: each day => { date, completionPercentage }
@@ -190,7 +210,7 @@ const getHeatmapData = async (req, res) => {
                 const createdAtDate = h.createdAt.toISOString().split('T')[0];
                 return h.scheduledDays.includes(dayAbbr) && dateStr >= createdAtDate;
             });
-            const dayLogs = allLogs.filter((l) => l.date === dateStr);
+            const dayLogs = logsByDateStr[dateStr] || [];
             const completed = dayLogs.filter((l) => l.status === 'done').length;
 
             heatmapData.push({

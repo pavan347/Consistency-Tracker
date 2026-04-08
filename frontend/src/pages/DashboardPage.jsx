@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { habitsAPI, logsAPI, analyticsAPI } from '../services/api';
+import { useHabits, useLogsByDate, useHeatmap, useOverallStats, useToggleLog, useUpdateLogNote } from '../hooks/apiHooks';
 import Navbar from '../components/Navbar';
 import HabitCard from '../components/HabitCard';
 import Heatmap from '../components/Heatmap';
@@ -20,84 +20,65 @@ const DashboardPage = () => {
     const today = getTodayUTC();
     const [selectedDate, setSelectedDate] = useState(today);
     const [viewType, setViewType] = useState('heatmap'); // 'heatmap' or 'calendar'
-    const [habits, setHabits] = useState([]);
-    const [logs, setLogs] = useState([]);
-    const [heatmapData, setHeatmapData] = useState([]);
-    const [overallStats, setOverallStats] = useState(null);
-    const [loading, setLoading] = useState(true);
+    
+    // React Query Hooks
+    const { data: habits = [], isLoading: isLoadingHabits } = useHabits();
+    const { data: logs = [], isLoading: isLoadingLogs } = useLogsByDate(selectedDate);
+    const { data: heatmapData = [], isLoading: isLoadingHeatmap } = useHeatmap();
+    const { data: overallStats = null, isLoading: isLoadingOverall } = useOverallStats();
+
+    const loading = isLoadingHabits || isLoadingLogs || isLoadingHeatmap || isLoadingOverall;
+
+    const { mutate: toggleLog } = useToggleLog(selectedDate);
+    const { mutate: updateNote } = useUpdateLogNote(selectedDate);
+
     const [note, setNote] = useState('');
-    const [existingNoteLogId, setExistingNoteLogId] = useState(null);
 
     const isSelectedToday = selectedDate === today;
     const selectedDayAbbr = getDayAbbr(selectedDate);
 
-    const fetchData = useCallback(async () => {
-        try {
-            const [habitsRes, logsRes, heatmapRes, overallRes] = await Promise.all([
-                habitsAPI.getAll(),
-                logsAPI.getByDate(selectedDate),
-                analyticsAPI.getHeatmap(),
-                analyticsAPI.getOverall(),
-            ]);
-
-            setHabits(habitsRes.data);
-            setLogs(logsRes.data);
-            setHeatmapData(heatmapRes.data);
-            setOverallStats(overallRes.data);
-
-            // Check for existing note in logs
-            const noteLog = logsRes.data.find((l) => l.note);
-            if (noteLog) {
-                setNote(noteLog.note);
-                setExistingNoteLogId(noteLog._id);
-            } else {
-                setNote('');
-                setExistingNoteLogId(null);
-            }
-        } catch (error) {
-            toast.error('Failed to load dashboard data');
-        } finally {
-            setLoading(false);
-        }
-    }, [selectedDate]);
-
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        const noteLog = logs.find((l) => l.note);
+        if (noteLog) {
+            setNote(noteLog.note);
+        } else {
+            setNote('');
+        }
+    }, [logs]);
 
-    const handleToggle = async (habitId, status) => {
+    const handleToggle = useCallback((habitId, status) => {
         if (!isSelectedToday) {
             toast.error('Past logs are immutable. You can only track today!');
             return;
         }
 
-        try {
-            await logsAPI.create({ habitId, status });
-            toast.success(status === 'done' ? '✓ Marked as done!' : '✗ Marked as missed');
-            fetchData();
-        } catch (error) {
-            toast.error('Failed to update');
-        }
-    };
+        toggleLog({ habitId, status }, {
+            onSuccess: () => {
+                toast.success(status === 'done' ? '✓ Marked as done!' : '✗ Marked as missed');
+            },
+            onError: () => {
+                toast.error('Failed to update');
+            }
+        });
+    }, [isSelectedToday, toggleLog]);
 
-    const handleNoteSave = async () => {
+    const handleNoteSave = () => {
         if (!isSelectedToday) {
             toast.error('Notes can only be added for today.');
             return;
         }
         if (!note.trim()) return;
 
-        try {
-            // Find a log for today to attach the note to — use the first one
-            const todayLog = logs[0];
-            if (todayLog) {
-                await logsAPI.update(todayLog._id, { note });
-                toast.success('Note saved!');
-            } else {
-                toast.error('Mark at least one habit first to add a note');
-            }
-        } catch (error) {
-            toast.error('Failed to save note');
+        const todayLog = logs[0];
+        if (todayLog && todayLog._id) {
+            updateNote({ id: todayLog._id, note }, {
+                onSuccess: () => toast.success('Note saved!'),
+                onError: () => toast.error('Failed to save note')
+            });
+        } else if (todayLog && !todayLog._id) {
+             toast.error('Log is syncing, try saving note in a second');
+        } else {
+            toast.error('Mark at least one habit first to add a note');
         }
     };
 
